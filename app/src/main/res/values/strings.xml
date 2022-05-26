@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Meta Video Player App</string>
+    <string name="m_load">Cargando&#8230;</string>
+    <string name="zoom_in">Original</string>
+    <string name="zoom_out">Ampliado</string>
+    <string name="error_ocurr">Ha ocurrido un error!</string>
+</resources>
