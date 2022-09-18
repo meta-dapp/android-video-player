@@ -14,12 +14,14 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Rational;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -33,11 +35,13 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatSeekBar;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
@@ -72,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private static boolean floating = false;
     private TextView tv;
     private ImageView mExolock;
-    private LinearLayout mExoControls;
+    private LinearLayout mExoControls1, mExoControls2, mExoControls3;
     private boolean locked = false;
     private ScaleGestureDetector scaleGestureDetector;
 
@@ -82,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
     /// PIP Mode
     private BroadcastReceiver mReceiver;
     private static final int REQUEST_CODE = 101;
+
+    private AppCompatSeekBar mVolumeSeek, mBrigSeek;
+    private ImageView mVolImage, mBrigImage;
 
 
     @Override
@@ -103,7 +110,16 @@ public class MainActivity extends AppCompatActivity {
 
         playerView = findViewById(R.id.playerView);
         mExolock = findViewById(R.id.exo_lock);
-        mExoControls = findViewById(R.id.exo_controls);
+        mExoControls1 = findViewById(R.id.exo_controls1);
+        mExoControls2 = findViewById(R.id.dura_els);
+        mExoControls3 = findViewById(R.id.prog_els);
+        mVolumeSeek = findViewById(R.id.seekBarVol);
+        mBrigSeek = findViewById(R.id.seekBarBrig);
+        mVolImage = findViewById(R.id.vol_image);
+        mBrigImage = findViewById(R.id.brig_image);
+
+        configVolume();
+
         scaleGestureDetector = new ScaleGestureDetector(mContext, new CustomOnScaleGestureListener(
                 new PinchListener() {
                     @Override
@@ -132,14 +148,113 @@ public class MainActivity extends AppCompatActivity {
 
         mExoRotate.setOnClickListener(view -> {
             int orientation = getResources().getConfiguration().orientation;
-            if(orientation == Configuration.ORIENTATION_PORTRAIT)
+            if(orientation == Configuration.ORIENTATION_PORTRAIT) {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+                mBrigSeek.setVisibility(View.VISIBLE);
+                mBrigImage.setVisibility(View.VISIBLE);
+                mVolImage.setVisibility(View.VISIBLE);
+                mVolumeSeek.setVisibility(View.VISIBLE);
+            }else{
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+                mBrigSeek.setVisibility(View.GONE);
+                mBrigImage.setVisibility(View.GONE);
+                mVolImage.setVisibility(View.GONE);
+                mVolumeSeek.setVisibility(View.GONE);
+            }
         });
 
         // Set toolbar
         setSupportActionBar(toolbar);
         startPlaying(url);
+    }
+
+    private void configVolume(){
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        int volume_level = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+        int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+
+        mVolumeSeek.setMax(max);
+        mVolumeSeek.setProgress(volume_level);
+
+        int progress = Widget.getSavedBrightness(mContext);
+        mBrigSeek.setMax(255);
+        mBrigSeek.setProgress(progress);
+
+        settingBrigSeekImages(progress);
+        settingVolSeekImages(volume_level);
+        setBrigState(progress);
+
+        mVolumeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                setVolumeState(progress);
+                settingVolSeekImages(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        mBrigSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                setBrigState(progress);
+                settingBrigSeekImages(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+    }
+
+    private void settingBrigSeekImages(int progressBrig){
+        if (progressBrig <= 100)
+            setImageDrawable(mBrigImage, R.drawable.ic_action_brig_low);
+        else if (progressBrig <= 200)
+            setImageDrawable(mBrigImage, R.drawable.ic_action_brig_med);
+        else setImageDrawable(mBrigImage, R.drawable.ic_action_brig_high);
+    }
+
+    private void settingVolSeekImages(int progressVol){
+        if (progressVol <= 3)
+            setImageDrawable(mVolImage, R.drawable.ic_action_volume_mute);
+        else if (progressVol <= 7)
+            setImageDrawable(mVolImage, R.drawable.ic_action_volume_down);
+        else setImageDrawable(mVolImage, R.drawable.ic_action_volume_up);
+    }
+
+    private void setImageDrawable(ImageView view, int drawable){
+        view.setImageDrawable(ContextCompat.getDrawable(mContext, drawable));
+    }
+
+    private void setVolumeState(int progress){
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        am.setStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                progress,
+                0);
+    }
+
+    private void setBrigState(int progress){
+        float brightness = progress / (float)255;
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.screenBrightness = brightness;
+        getWindow().setAttributes(lp);
+        Widget.putDataPref(mContext, "screen_cur_br", String.valueOf(progress));
     }
 
     private void showSnack(String msg){
@@ -223,7 +338,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void lockPlayerControls(boolean lock){
-        mExoControls.setVisibility(lock ? View.INVISIBLE : View.VISIBLE);
+        mExoControls1.setVisibility(lock ? View.INVISIBLE : View.VISIBLE);
+        mExoControls2.setVisibility(lock ? View.INVISIBLE : View.VISIBLE);
+        mExoControls3.setVisibility(lock ? View.INVISIBLE : View.VISIBLE);
         showActionBar(!lock);
     }
 
@@ -358,21 +475,24 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode,
-                                              Configuration newConfig){
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
-        if(isInPictureInPictureMode){
+                                              Configuration newConfig) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        else super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+
+        if (isInPictureInPictureMode) {
             startPlayer();
             playerView.setUseController(false);
             floating = true;
             showActionBar(false);
 
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 IntentFilter filter = new IntentFilter();
                 filter.addAction("com.metadapp.videoplayerapp.PLAY_PAUSE");
                 mReceiver = new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        if(player != null){
+                        if (player != null) {
                             boolean state = !player.getPlayWhenReady();
                             player.setPlayWhenReady(state);
                             createPipAction();
@@ -383,10 +503,10 @@ public class MainActivity extends AppCompatActivity {
                 registerReceiver(mReceiver, filter);
                 createPipAction();
             }
-        }else{
+        } else {
             playerView.setUseController(true);
             floating = false;
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mReceiver != null)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mReceiver != null)
                 unregisterReceiver(mReceiver);
         }
     }

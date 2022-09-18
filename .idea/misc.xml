@@ -3,9 +3,14 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/drawable-anydpi/forward_10.xml" value="0.242" />
+        <entry key="app/src/main/res/drawable-anydpi/ic_unlock.xml" value="0.242" />
+        <entry key="app/src/main/res/drawable-anydpi/replay_10-48px.xml" value="0.242" />
+        <entry key="app/src/main/res/drawable/replay_10-48px.xml" value="0.242" />
         <entry key="app/src/main/res/font/font.xml" value="0.2609375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.165" />
-        <entry key="app/src/main/res/layout/exo_control_view.xml" value="0.125" />
+        <entry key="app/src/main/res/layout/exo_control_view.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/exo_controls_netflix.xml" value="0.25" />
       </map>
     </option>
   </component>

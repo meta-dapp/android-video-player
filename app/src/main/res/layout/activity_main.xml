@@ -30,7 +30,7 @@
             app:show_buffering="never"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:controller_layout_id="@layout/exo_control_view"
+            app:controller_layout_id="@layout/exo_controls_netflix"
             />
 
     </RelativeLayout>
